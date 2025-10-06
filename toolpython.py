@@ -67,12 +67,13 @@ choice = st.sidebar.selectbox('Choose', menu)
 
 # Safe evaluator
 def safe_eval(expr: str):
+    # allow only a small set of safe characters (digits, operators, parentheses, decimal point, spaces and e/E)
     allowed_chars = set('0123456789+-*/()., eE')
     if not expr:
         return 'Empty expression'
     try:
-        cleaned = expr.replace('
-', '')
+        # remove newline and carriage return characters using chr() to avoid embedding escape sequences
+        cleaned = expr.replace(chr(10), '').replace(chr(13), '')
         if any(ch not in allowed_chars for ch in cleaned):
             return 'Disallowed character in expression'
         return eval(cleaned, {'__builtins__': {}}, {'math': math})
