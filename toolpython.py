@@ -1,14 +1,8 @@
 """
 Streamlit Python Toolkit — English deploy-ready single-file app
 
-This file contains many small utilities in English and includes deployment helpers
-(requirements.txt and Dockerfile generation). It deliberately avoids use of complex
-regular-expression literals in the source to simplify updates.
-
-How to run:
-1) Save as streamlit_python_toolkit.py
-2) Optional: generate requirements.txt from the Deploy tab and install with pip
-3) Run: streamlit run streamlit_python_toolkit.py
+This file bundles many utilities. Save as streamlit_python_toolkit.py and run with:
+    streamlit run streamlit_python_toolkit.py
 
 """
 
@@ -71,31 +65,33 @@ menu = [
 ]
 choice = st.sidebar.selectbox('Choose', menu)
 
-# simple evaluator
-def safe_eval(expr):
-    # allow only a small set of safe characters (digits, operators, parentheses, decimal point, spaces and e/E)
+# Safe evaluator
+def safe_eval(expr: str):
     allowed_chars = set('0123456789+-*/()., eE')
     if not expr:
         return 'Empty expression'
     try:
-        # remove newlines first to avoid unterminated string issues when files are transferred
-        cleaned = expr.replace("\n", "")
+        cleaned = expr.replace('
+', '')
         if any(ch not in allowed_chars for ch in cleaned):
             return 'Disallowed character in expression'
         return eval(cleaned, {'__builtins__': {}}, {'math': math})
     except Exception as e:
         return f'Error: {e}'
 
+# Overview
 if choice == 'Overview':
     st.header('Overview')
-    st.write('Many utilities in a single Streamlit file. Use the left menu to explore.')
+    st.write('This app collects many small utilities into one file. Use the left menu to explore the tools.')
 
+# Calculator
 if choice == 'Calculator':
     st.header('Calculator')
     expr = st.text_input('Arithmetic expression', '2*(3+4)/7')
     if st.button('Compute'):
         st.write(safe_eval(expr))
 
+# Units
 if choice == 'Units':
     st.header('Unit converter')
     category = st.selectbox('Category', ['Length','Weight','Temperature','Speed'])
@@ -110,21 +106,29 @@ if choice == 'Units':
     dst = st.selectbox('To', list(units.keys()))
     if st.button('Convert'):
         st.write(f'{val} {src} = {val * units[src] / units[dst]} {dst}')
+
     if category == 'Temperature':
-        val = st.number_input('Value', value=25.0, key='temp')
-        src = st.selectbox('From', ['C','F','K'], key='t_from')
-        dst = st.selectbox('To', ['C','F','K'], key='t_to')
+        val = st.number_input('Value (temp)', value=25.0, key='temp')
+        src_t = st.selectbox('From (temp)', ['C','F','K'], key='t_from')
+        dst_t = st.selectbox('To (temp)', ['C','F','K'], key='t_to')
         def tconv(v,s,d):
-            if s == d: return v
-            if s == 'C': c = v
-            elif s == 'F': c = (v - 32) * 5/9
-            else: c = v - 273.15
-            if d == 'C': return c
-            if d == 'F': return c * 9/5 + 32
+            if s == d:
+                return v
+            if s == 'C':
+                c = v
+            elif s == 'F':
+                c = (v - 32) * 5/9
+            else:
+                c = v - 273.15
+            if d == 'C':
+                return c
+            if d == 'F':
+                return c * 9/5 + 32
             return c + 273.15
         if st.button('Convert Temperature'):
-            st.write(tconv(val,src,dst))
+            st.write(tconv(val, src_t, dst_t))
 
+# Random
 if choice == 'Random':
     st.header('Random generators')
     kind = st.selectbox('Kind', ['Password','UUID','Token','String'])
@@ -135,9 +139,12 @@ if choice == 'Random':
         use_symbols = st.checkbox('Symbols', True)
         if st.button('Generate password'):
             pool = string.ascii_lowercase
-            if use_upper: pool += string.ascii_uppercase
-            if use_digits: pool += string.digits
-            if use_symbols: pool += '!@#$%^&*()'
+            if use_upper:
+                pool += string.ascii_uppercase
+            if use_digits:
+                pool += string.digits
+            if use_symbols:
+                pool += '!@#$%^&*()'
             st.code(''.join(random.choice(pool) for _ in range(length)))
     if kind == 'UUID':
         if st.button('Generate UUID4'):
@@ -146,7 +153,7 @@ if choice == 'Random':
         n = st.number_input('Bytes', 8, 256, 32)
         if st.button('Generate token'):
             try:
-                data = random.randbytes(n) if hasattr(random,'randbytes') else bytes(random.getrandbits(8) for _ in range(n))
+                data = random.randbytes(n) if hasattr(random, 'randbytes') else bytes(random.getrandbits(8) for _ in range(n))
                 st.code(base64.urlsafe_b64encode(data).rstrip(b'=').decode())
             except Exception as e:
                 st.error(e)
@@ -156,6 +163,7 @@ if choice == 'Random':
         if st.button('Generate string'):
             st.write(''.join(random.choice(charset) for _ in range(int(length))))
 
+# Encode/Hash
 if choice == 'Encode/Hash':
     st.header('Base64 and Hash')
     part = st.selectbox('Choose', ['Base64','Hash'])
@@ -164,8 +172,10 @@ if choice == 'Encode/Hash':
         action = st.radio('Action', ['encode','decode'])
         if st.button('Run'):
             try:
-                if action == 'encode': st.text(base64.b64encode(text.encode()).decode())
-                else: st.text(base64.b64decode(text).decode())
+                if action == 'encode':
+                    st.text(base64.b64encode(text.encode()).decode())
+                else:
+                    st.text(base64.b64decode(text).decode())
             except Exception as e:
                 st.error(e)
     else:
@@ -175,6 +185,7 @@ if choice == 'Encode/Hash':
             h = getattr(hashlib, algo)(text.encode()).hexdigest()
             st.code(h)
 
+# Text
 if choice == 'Text':
     st.header('Text utilities')
     txt = st.text_area('Text', height=200)
@@ -190,6 +201,7 @@ if choice == 'Text':
         chars = len(txt)
         st.write('Words:', words, 'Chars:', chars)
 
+# Files
 if choice == 'Files':
     st.header('JSON / CSV / Excel')
     file = st.file_uploader('Upload CSV, JSON or Excel', type=['csv','json','xlsx'])
@@ -202,21 +214,22 @@ if choice == 'Files':
             else:
                 df = pd.read_csv(io.BytesIO(content))
                 st.dataframe(df)
-                st.download_button('Download JSON', data=df.to_json(orient='records', force_ascii=False), file_name=name.replace('.csv','.json'))
+                st.download_button('Download JSON', data=df.to_json(orient='records', force_ascii=False), file_name=name.replace('.csv', '.json'))
         elif name.endswith('.xlsx'):
             if pd is None:
                 st.warning('pandas required')
             else:
                 df = pd.read_excel(io.BytesIO(content))
                 st.dataframe(df)
-                st.download_button('Download CSV', data=df.to_csv(index=False).encode('utf-8'), file_name=name.replace('.xlsx','.csv'))
+                st.download_button('Download CSV', data=df.to_csv(index=False).encode('utf-8'), file_name=name.replace('.xlsx', '.csv'))
         else:
             try:
                 obj = json.loads(content.decode())
                 st.json(obj)
-            except Exception as e:
+            except Exception:
                 st.error('Invalid JSON')
 
+# QR & Image
 if choice == 'QR & Image':
     st.header('QR and Image')
     action = st.selectbox('Action', ['QR','Image preview','Image to ASCII'])
@@ -259,6 +272,7 @@ if choice == 'QR & Image':
 '.join(txt[i:i+new_w] for i in range(0, len(txt), new_w))
                 st.text(ascii_img)
 
+# PDF
 if choice == 'PDF':
     st.header('PDF extract')
     up = st.file_uploader('Upload PDF', type=['pdf'])
@@ -275,6 +289,7 @@ if choice == 'PDF':
             except Exception as e:
                 st.error(e)
 
+# HTTP
 if choice == 'HTTP':
     st.header('HTTP GET')
     url = st.text_input('URL', value='https://httpbin.org/get')
@@ -289,6 +304,7 @@ if choice == 'HTTP':
             except Exception as e:
                 st.error(e)
 
+# Dates
 if choice == 'Dates':
     st.header('Date calculator')
     d1 = st.date_input('Date A', date.today())
@@ -296,6 +312,7 @@ if choice == 'Dates':
     if st.button('Difference'):
         st.write('Days difference:', (d2 - d1).days)
 
+# Colors
 if choice == 'Colors':
     st.header('Color conversions')
     hexv = st.text_input('HEX', '#ff8800')
@@ -307,6 +324,7 @@ if choice == 'Colors':
         else:
             st.error('HEX must be 6 chars')
 
+# Faker
 if choice == 'Faker':
     st.header('Fake data generator')
     if _faker is None:
@@ -318,31 +336,43 @@ if choice == 'Faker':
             rows = []
             for _ in range(n):
                 r = {}
-                if 'name' in fields: r['name'] = _faker.name()
-                if 'email' in fields: r['email'] = _faker.email()
-                if 'address' in fields: r['address'] = _faker.address()
-                if 'phone' in fields: r['phone'] = _faker.phone_number()
+                if 'name' in fields:
+                    r['name'] = _faker.name()
+                if 'email' in fields:
+                    r['email'] = _faker.email()
+                if 'address' in fields:
+                    r['address'] = _faker.address()
+                if 'phone' in fields:
+                    r['phone'] = _faker.phone_number()
                 rows.append(r)
             st.json(rows)
 
+# Deploy
 if choice == 'Deploy':
     st.header('Deployment helpers')
-    st.write('You can generate a requirements.txt and a simple Dockerfile.')
+    st.write('Generate requirements.txt and a basic Dockerfile for deployment.')
     reqs = ['streamlit', 'qrcode[pil]', 'Pillow', 'pandas', 'faker', 'PyPDF2', 'requests']
     if st.button('Download requirements.txt'):
         txt = '
 '.join(reqs) + '
 '
         st.download_button('Download', data=txt.encode('utf-8'), file_name='requirements.txt')
-    docker = '''FROM python:3.10-slim
-WORKDIR /app
-COPY . /app
-RUN pip install --no-cache-dir -r requirements.txt
-EXPOSE 8501
-CMD ["streamlit","run","streamlit_python_toolkit.py","--server.port","8501","--server.address","0.0.0.0"]
-'''
+    docker = (
+        'FROM python:3.10-slim
+'
+        'WORKDIR /app
+'
+        'COPY . /app
+'
+        'RUN pip install --no-cache-dir -r requirements.txt
+'
+        'EXPOSE 8501
+'
+        'CMD ["streamlit","run","streamlit_python_toolkit.py","--server.port","8501","--server.address","0.0.0.0"]
+'
+    )
     if st.button('Download Dockerfile'):
         st.download_button('Download Dockerfile', data=docker.encode('utf-8'), file_name='Dockerfile')
 
 st.markdown('---')
-st.caption('If you want more features, ask and I will add them with deployment notes.')
+st.caption('Ask me to add more features and I will update the file with deployment notes.')
