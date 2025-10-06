@@ -73,14 +73,16 @@ choice = st.sidebar.selectbox('Choose', menu)
 
 # simple evaluator
 def safe_eval(expr):
+    # allow only a small set of safe characters (digits, operators, parentheses, decimal point, spaces and e/E)
     allowed_chars = set('0123456789+-*/()., eE')
     if not expr:
         return 'Empty expression'
-    if any(ch not in allowed_chars for ch in expr.replace('
-','')):
-        return 'Disallowed character in expression'
     try:
-        return eval(expr, {'__builtins__': {}}, {'math': math})
+        # remove newlines first to avoid unterminated string issues when files are transferred
+        cleaned = expr.replace("\n", "")
+        if any(ch not in allowed_chars for ch in cleaned):
+            return 'Disallowed character in expression'
+        return eval(cleaned, {'__builtins__': {}}, {'math': math})
     except Exception as e:
         return f'Error: {e}'
 
